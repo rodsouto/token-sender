@@ -2,10 +2,10 @@ import { sendTransaction, waitForTransaction, writeContract, erc20ABI } from '@w
 import { parseUnits } from 'viem'
 import { useBroadcastChannel } from './useBroadcastChannel'
 import { TokenFormFields } from '../components/TokenForm'
-import { toast } from 'react-toastify'
+import { toast, ToastItem } from 'react-toastify'
 import { Token1Inch } from './useTokensByChain'
 import { useEffect, useState } from 'react'
-import { addLocalStorageTx, getLocalStorageTxs } from '../utils/localStorage'
+import { addLocalStorageTx, getLocalStorageTxs, removeLocalStorageTx } from '../utils/localStorage'
 import { showToast } from '../utils/toast'
 
 function shortAddress(address: `0x${string}`) {
@@ -18,14 +18,22 @@ export interface BroadcastData {
   toastId: string
 }
 
+export interface BroadcastToastClosed {
+  closedToastId: string
+}
+
 export default function useFormSubmit() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   /* BROADCAST MESSAGES TO OTHER TABS */
   const broadcastNotification = useBroadcastChannel('token-form-notification', (e: MessageEvent) => {
-    const broadcastData = JSON.parse(e.data) as BroadcastData
+    const rawData = JSON.parse(e.data) as BroadcastData | BroadcastToastClosed
 
-    showToast(broadcastData)
+    if ('closedToastId' in rawData) {
+      toast.dismiss(rawData.closedToastId)
+    } else {
+      showToast(rawData)
+    }
   })
 
   /* LOAD STATE FROM LOCAL STORAGE */
@@ -33,6 +41,15 @@ export default function useFormSubmit() {
     const localData = getLocalStorageTxs()
 
     Object.values(localData).forEach((broadcastData) => showToast(broadcastData))
+
+    const unsubscribe = toast.onChange((payload: ToastItem) => {
+      if (payload.status === 'removed') {
+        broadcastNotification(JSON.stringify({ closedToastId: payload.id }))
+        removeLocalStorageTx(String(payload.id))
+      }
+    })
+
+    return () => unsubscribe()
   }, [])
 
   /* SEND TOKENS */
@@ -123,7 +140,7 @@ export default function useFormSubmit() {
       const broadcastData: BroadcastData = {
         type: 'error',
         message,
-        toastId: hash,
+        toastId: hash || 'tx_error',
       }
       addLocalStorageTx(broadcastData)
       showToast(broadcastData)

@@ -1,6 +1,5 @@
 import { toast } from 'react-toastify'
 import { BroadcastData } from '../hooks/useFormSubmit'
-import { removeLocalStorageTx } from './localStorage'
 
 export function showToast(broadcastData: BroadcastData) {
   const TYPES = {
@@ -14,7 +13,6 @@ export function showToast(broadcastData: BroadcastData) {
     type: TYPES[broadcastData.type],
     isLoading: broadcastData.type === 'pending',
     closeButton: true,
-    onClose: () => removeLocalStorageTx(broadcastData),
   }
 
   if (toast.isActive(broadcastData.toastId)) {

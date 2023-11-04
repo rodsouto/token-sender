@@ -14,10 +14,10 @@ export function addLocalStorageTx(broadcastData: BroadcastData) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(localData))
 }
 
-export function removeLocalStorageTx(broadcastData: BroadcastData) {
+export function removeLocalStorageTx(toastId: string) {
   const localData = getLocalStorageTxs()
 
-  delete localData[broadcastData.toastId]
+  delete localData[toastId]
 
   localStorage.setItem(LOCAL_KEY, JSON.stringify(localData))
 }
