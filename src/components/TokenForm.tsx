@@ -11,6 +11,7 @@ export type TokenFormFields = {
   amount: number
   token: `0x${string}` | ''
   recipient: `0x${string}` | ''
+  search: string
 }
 
 interface TokenFormProps {
@@ -37,6 +38,7 @@ export default function TokenForm({ onFormSubmit, isSubmitting }: TokenFormProps
   })
 
   const token = watch('token')
+  const search = watch('search')
 
   const { data: balance } = useBalance({
     address,
@@ -46,6 +48,8 @@ export default function TokenForm({ onFormSubmit, isSubmitting }: TokenFormProps
   })
 
   const { data: tokens = [] } = useTokensByChain(chain.id)
+
+  const tokenData = tokens.find((t) => t.address === token)
 
   useEffect(() => {
     if (tokens.length > 0) {
@@ -79,9 +83,19 @@ export default function TokenForm({ onFormSubmit, isSubmitting }: TokenFormProps
     await onFormSubmit(token!, data)
   }
 
+  const filterSearch = (token: Token1Inch) => {
+    const _search = (search || '').toLocaleLowerCase()
+    return (
+      _search === '' ||
+      token.address.toLocaleLowerCase().includes(_search) ||
+      token.name.toLocaleLowerCase().includes(_search) ||
+      token.symbol.toLocaleLowerCase().includes(_search)
+    )
+  }
+
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} className="border border-[#2f333c] p-4 rounded-xl space-y-4 max-w-lg mx-auto">
+      <form onSubmit={handleSubmit(onSubmit)} className="border border-[#2f333c] p-4 rounded-xl space-y-4 max-w-lg mx-auto mt-5">
         <div className="space-y-2">
           <div className="text-white font-medium">Chain</div>
           <div>{chain.name}</div>
@@ -91,13 +105,31 @@ export default function TokenForm({ onFormSubmit, isSubmitting }: TokenFormProps
           <div className="text-white font-medium">Token</div>
           <div className="space-x-2 flex">
             <div className="w-1/2 space-y-2">
-              <select {...register('token', { required: true })} className="select select-bordered w-full">
-                {tokens.map((token) => (
-                  <option value={token.address} key={token.address}>
-                    {token.symbol}
-                  </option>
-                ))}
-              </select>
+              <button
+                type="button"
+                className="btn btn-outline w-full flex justify-between"
+                onClick={() => (document.getElementById('token-modal') as HTMLDialogElement).showModal()}
+              >
+                {tokenData && (
+                  <div className="flex space-x-2 items-center">
+                    <img src={tokenData.logoURI} className="w-5 h-5" /> <span>{tokenData.symbol}</span>
+                  </div>
+                )}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
               {errors.token && <div className="text-red-600">{errors.token.message || 'This field is required'}</div>}
             </div>
 
@@ -157,6 +189,41 @@ export default function TokenForm({ onFormSubmit, isSubmitting }: TokenFormProps
           )}
         </div>
       </form>
+
+      <dialog id="token-modal" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+          </form>
+          <h3 className="font-bold text-lg">Select Token</h3>
+          <input
+            type="text"
+            {...register('search', {
+              required: false,
+            })}
+            placeholder="Search symbol or address"
+            className="input input-sm input-bordered w-full my-3"
+          />
+          <div className="space-y-2 text-sm h-44 overflow-auto">
+            {tokens.filter(filterSearch).map((token) => (
+              <button
+                key={token.address}
+                className="flex space-x-2 cursor-pointer"
+                onClick={() => {
+                  setValue('token', token.address)
+                  ;(document.getElementById('token-modal') as HTMLDialogElement).close()
+                }}
+              >
+                <img src={token.logoURI} className="w-5 h-5" />{' '}
+                <div>
+                  {token.symbol} ({token.name})
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </dialog>
+
       <ToastContainer position="top-right" autoClose={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable={false} theme="dark" />
     </>
   )

@@ -8,6 +8,7 @@ export interface Token1Inch {
   decimals: number
   address: `0x${string}`
   tags: string[]
+  logoURI: string
 }
 
 export default function useTokensByChain(chainId: number) {
