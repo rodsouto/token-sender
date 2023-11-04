@@ -25,7 +25,6 @@ export default function useFormSubmit() {
   const broadcastNotification = useBroadcastChannel('token-form-notification', (e: MessageEvent) => {
     const broadcastData = JSON.parse(e.data) as BroadcastData
 
-    addLocalStorageTx(broadcastData)
     showToast(broadcastData)
   })
 
@@ -48,13 +47,13 @@ export default function useFormSubmit() {
       ;({ hash } = isNativeToken
         ? await sendTransaction({
             to: data.recipient,
-            value: parseUnits(String(data.amount) as `${number}`, token!.decimals),
+            value: parseUnits(String(data.amount) as `${number}`, token.decimals),
           })
         : await writeContract({
             address: data.token as `0x${string}`,
             abi: erc20ABI,
             functionName: 'transfer',
-            args: [data.recipient as `0x${string}`, parseUnits(String(data.amount) as `${number}`, token!.decimals)],
+            args: [data.recipient as `0x${string}`, parseUnits(String(data.amount) as `${number}`, token.decimals)],
           }))
 
       /* SHOW MESSAGES IN CURRENT TAB */
@@ -69,6 +68,7 @@ export default function useFormSubmit() {
               message,
               toastId: `replaced_${hash}`,
             }
+            addLocalStorageTx(broadcastData)
             showToast(broadcastData)
             broadcastNotification(JSON.stringify(broadcastData))
           },
@@ -82,6 +82,7 @@ export default function useFormSubmit() {
                 message,
                 toastId: hash,
               }
+              addLocalStorageTx(broadcastData)
               broadcastNotification(JSON.stringify(broadcastData))
               return message
             },
@@ -94,6 +95,7 @@ export default function useFormSubmit() {
                 message,
                 toastId: hash,
               }
+              addLocalStorageTx(broadcastData)
               broadcastNotification(JSON.stringify(broadcastData))
               return message
             },
@@ -106,6 +108,7 @@ export default function useFormSubmit() {
                 message,
                 toastId: hash,
               }
+              addLocalStorageTx(broadcastData)
               broadcastNotification(JSON.stringify(broadcastData))
               return message
             },
@@ -122,6 +125,7 @@ export default function useFormSubmit() {
         message,
         toastId: hash,
       }
+      addLocalStorageTx(broadcastData)
       showToast(broadcastData)
       broadcastNotification(JSON.stringify(broadcastData))
     }
